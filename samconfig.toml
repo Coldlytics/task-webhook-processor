@@ -1,0 +1,13 @@
+version = 0.1
+[default]
+[default.deploy]
+[default.deploy.parameters]
+stack_name = "webhook-processor"
+s3_bucket = "aws-sam-cli-managed-default-samclisourcebucket-odlccuwhj0sc"
+s3_prefix = "webhook-processor"
+region = "us-east-1"
+profile = "coldlytics"
+confirm_changeset = true
+capabilities = "CAPABILITY_NAMED_IAM"
+parameter_overrides = "VpcSecurityGroupIds=\"sg-8c313c80\" VpcSubnetIds=\"subnet-bff16ad9,subnet-103e155d\""
+image_repositories = []

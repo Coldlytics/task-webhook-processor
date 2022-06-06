@@ -1,0 +1,5 @@
+{
+  "scripts": {
+    "start": "sam local invoke -e events/event.json --env-vars env.json WebhookProcessor"
+  }
+}

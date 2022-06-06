@@ -1,0 +1,76 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  webhook-processor
+
+  Sample SAM Template for webhook-processor
+
+Parameters:
+  VpcSecurityGroupIds:
+    Type: List<String>
+    Description: Target VPC security groups
+    Default: 'sg-8c313c80'
+  VpcSubnetIds:
+    Type: List<String>
+    Description: Target VPC subnets
+    Default: 'subnet-bff16ad9,subnet-103e155d'
+
+# More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
+Globals:
+  Function:
+    Timeout: 3
+
+Resources:
+  WebhookProcessor:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: 'webhookProcessor'
+      CodeUri: ./webhook_processor
+      Handler: dist/index.handler
+      Runtime: nodejs12.x
+      Timeout: 10
+      Environment:
+        Variables:
+          NODE_ENV: production
+          GOOGLE_SERVICE_ACCOUNT_EMAIL: ''
+          GOOGLE_SERVICE_ACCOUNT_KEY: ''
+      Role:
+        Fn::GetAtt:
+        - LambdaExecutionRole
+        - Arn
+      Events:
+        TaskWebhookEvent:
+          Type: SQS
+          Properties:
+            BatchSize: 1
+            Queue: !Sub 'arn:aws:sqs:us-east-1:${AWS::AccountId}:TaskWebhookQueue'
+      VpcConfig:
+        SecurityGroupIds: !Ref VpcSecurityGroupIds
+        SubnetIds: !Ref VpcSubnetIds
+  LambdaExecutionRole:
+    Description: Creating service role in IAM for AWS Lambda
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub 'webhookProcessorExecutionRole'
+      AssumeRolePolicyDocument:
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service: [lambda.amazonaws.com]
+          Action: sts:AssumeRole
+      Path: /
+      ManagedPolicyArns:
+        - !Sub 'arn:${AWS::Partition}:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole'
+        - !Sub 'arn:${AWS::Partition}:iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole'
+  LambdaExecutionRolePolicy: 
+    Type: AWS::IAM::Policy
+    Properties: 
+      PolicyName: !Sub 'webhookProcessorExecutionRolePolicy'
+      PolicyDocument: 
+        Version: "2012-10-17"
+        Statement: 
+          - Effect: Allow
+            Action: sqs:*
+            Resource: !Sub 'arn:aws:sqs:us-east-1:${AWS::AccountId}:TaskWebhookQueue'
+      Roles:
+        - Ref: LambdaExecutionRole
